@@ -6,53 +6,63 @@ const { shouldNotBeCalled } = require('root/tests/integration/utils/utils')
 const editEntity = params => _editEntity(params, properties, instance)
 
 describe('entity edit', () => {
-  it('should reject a missing id', () => {
+  it('should reject a missing id', async () => {
     const params = { claims: { someWikibaseItemPropertyId: 'bla' } }
-    editEntity.bind(null, params).should.throw('invalid entity id')
+    await editEntity(params)
+    .then(shouldNotBeCalled)
+    .catch(err => err.message.should.equal('invalid entity id'))
   })
 
-  it('should reject misplaced parameters', () => {
+  it('should reject misplaced parameters', async () => {
     const params = { id, P2: 'bla' }
-    try {
-      const res = editEntity(params)
-      shouldNotBeCalled(res)
-    } catch (err) {
+    await editEntity(params)
+    .then(shouldNotBeCalled)
+    .catch(err => {
       err.message.should.equal('invalid parameter')
       err.context.parameter.should.equal('P2')
-    }
+    })
   })
 
-  it('should reject an edit without data', () => {
+  it('should reject an edit without data', async () => {
     const params = { id }
-    editEntity.bind(null, params).should.throw('no data was passed')
+    await editEntity(params)
+    .then(shouldNotBeCalled)
+    .catch(err => err.message.should.equal('no data was passed'))
   })
 
-  it('should reject invalid claims', () => {
+  it('should reject invalid claims', async () => {
     const params = { id, claims: { P2: 'bla' } }
-    editEntity.bind(null, params).should.throw('invalid entity value')
+    await editEntity(params)
+    .then(shouldNotBeCalled)
+    .catch(err => err.message.should.equal('invalid entity value'))
   })
 
-  it('should reject invalid labels', () => {
+  it('should reject invalid labels', async () => {
     const params = { id, labels: { fr: '' } }
-    editEntity.bind(null, params).should.throw('invalid label')
+    await editEntity(params)
+    .then(shouldNotBeCalled)
+    .catch(err => err.message.should.equal('invalid label'))
   })
 
-  it('should reject invalid descriptions', () => {
+  it('should reject invalid descriptions', async () => {
     const params = { id, descriptions: { fr: '' } }
-    editEntity.bind(null, params).should.throw('invalid description')
+    await editEntity(params)
+    .then(shouldNotBeCalled)
+    .catch(err => err.message.should.equal('invalid description'))
   })
 
-  it('should set the action to wbeditentity', () => {
+  it('should set the action to wbeditentity', async () => {
     const params = { id, labels: { fr: 'foo' } }
-    editEntity(params).action.should.equal('wbeditentity')
+    const { action } = await editEntity(params)
+    action.should.equal('wbeditentity')
   })
 
-  it('should return formatted data', () => {
+  it('should return formatted data', async () => {
     const label = randomString()
     const description = randomString()
     const frAlias = randomString()
     const enAlias = randomString()
-    const { data } = editEntity({
+    const { data } = await editEntity({
       id,
       labels: { fr: label },
       aliases: { fr: frAlias, en: [ enAlias ] },
@@ -93,8 +103,8 @@ describe('entity edit', () => {
     })
   })
 
-  it('should format an entity claim with qualifiers', () => {
-    const { data } = editEntity({
+  it('should format an entity claim with qualifiers', async () => {
+    const { data } = await editEntity({
       id,
       claims: {
         P2: [
@@ -196,11 +206,11 @@ describe('entity edit', () => {
     ])
   })
 
-  it('should format an entity claim with rich qualifier', () => {
+  it('should format an entity claim with rich qualifier', async () => {
     const qualifiers = {
       P8: [ { value: { amount: 100, unit: 'Q6982035' } } ]
     }
-    const { data } = editEntity({
+    const { data } = await editEntity({
       id,
       claims: {
         P2: [ { value: 'Q54173', qualifiers } ]
@@ -219,11 +229,11 @@ describe('entity edit', () => {
     })
   })
 
-  it('should format an entity claim with a qualifier with a special snaktype', () => {
+  it('should format an entity claim with a qualifier with a special snaktype', async () => {
     const qualifiers = {
       P4: { snaktype: 'somevalue' }
     }
-    const { data } = editEntity({
+    const { data } = await editEntity({
       id,
       claims: {
         P2: [ { value: 'Q54173', qualifiers } ]
@@ -235,11 +245,11 @@ describe('entity edit', () => {
     })
   })
 
-  it('should format an entity claim with a low precision time claim', () => {
+  it('should format an entity claim with a low precision time claim', async () => {
     const qualifiers = {
       P4: { value: '2019-04-01T00:00:00.000Z' }
     }
-    const { data } = editEntity({
+    const { data } = await editEntity({
       id,
       claims: {
         P2: [ { value: 'Q54173', qualifiers } ]
@@ -262,11 +272,11 @@ describe('entity edit', () => {
     })
   })
 
-  it('should format an entity claim with a time qualifier', () => {
+  it('should format an entity claim with a time qualifier', async () => {
     const qualifiers = {
       P4: { value: '2019-04-01T00:00:00.000Z' }
     }
-    const { data } = editEntity({
+    const { data } = await editEntity({
       id,
       claims: {
         P2: [ { value: 'Q54173', qualifiers } ]
@@ -289,12 +299,12 @@ describe('entity edit', () => {
     })
   })
 
-  it('should format an entity claim with a reference', () => {
+  it('should format an entity claim with a reference', async () => {
     const reference = {
       P7: 'https://example.org',
       P2: 'Q8447'
     }
-    const { data } = editEntity({
+    const { data } = await editEntity({
       id,
       claims: {
         P2: { value: 'Q2622002', references: reference }
@@ -317,14 +327,14 @@ describe('entity edit', () => {
     ])
   })
 
-  it('should format an entity claim with a reference formatted with a snaks object', () => {
+  it('should format an entity claim with a reference formatted with a snaks object', async () => {
     const reference = {
       snaks: {
         P7: 'https://example.org',
         P2: 'Q8447'
       }
     }
-    const { data } = editEntity({
+    const { data } = await editEntity({
       id,
       claims: {
         P2: { value: 'Q2622002', references: [ reference ] }
