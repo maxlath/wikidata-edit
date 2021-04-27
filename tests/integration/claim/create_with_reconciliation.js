@@ -4,7 +4,10 @@ const wbEdit = require('root')(config)
 const { getSandboxPropertyId, getReservedItemId } = require('tests/integration/utils/sandbox_entities')
 const { simplify } = require('wikibase-sdk')
 
-describe('create with reconciliation', () => {
+describe('create with reconciliation', function () {
+  this.timeout(20 * 1000)
+  before('wait for instance', require('tests/integration/utils/wait_for_instance'))
+
   describe('merge', () => {
     it('should not re-add an existing statement', async () => {
       const [ id, property ] = await Promise.all([
@@ -73,8 +76,7 @@ describe('create with reconciliation', () => {
       res2.claim.qualifiers[property2].map(simplify.qualifier).should.deepEqual([ 123 ])
     })
 
-    // Not implemented
-    xit('should not add an identical reference record', async () => {
+    it('should not add an identical reference record', async () => {
       const [ id, property, property2 ] = await Promise.all([
         getReservedItemId(),
         getSandboxPropertyId('string'),
@@ -84,24 +86,24 @@ describe('create with reconciliation', () => {
         id,
         property,
         value: 'foo',
-        references: {
-          [property]: 'bar',
-          [property2]: 123
-        }
+        references: [
+          { [property]: 'bar', [property2]: 123 },
+        ]
       })
       const res2 = await wbEdit.claim.create({
         id,
         property,
         value: 'foo',
-        references: {
-          [property]: 'bar',
-          [property2]: 123
-        },
+        references: [
+          { [property]: 'bar', [property2]: 123 },
+          { [property]: 'bar' },
+        ],
         reconciliation: { mode: 'merge' }
       })
       res2.claim.id.should.equal(res.claim.id)
       simplify.references(res2.claim.references).should.deepEqual([
-        { [property]: [ 'bar' ], [property2]: [ 123 ] },
+        { [property2]: [ 123 ], [property]: [ 'bar' ] },
+        { [property]: [ 'bar' ] },
       ])
     })
 

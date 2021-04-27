@@ -36,6 +36,7 @@
   "dependencies": {
     "cross-fetch": "^3.0.4",
     "crypto-js": "^3.1.9-1",
+    "lodash.isequal": "^4.5.0",
     "oauth-1.0a": "^2.2.6",
     "wikibase-sdk": "^7.11.0"
   },
