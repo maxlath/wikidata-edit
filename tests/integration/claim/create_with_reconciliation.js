@@ -260,46 +260,74 @@ describe('create with reconciliation', function () {
         })
       })
 
-      it('should ignore an unspecified unit', async () => {
+      it('should ignore unspecified parameters', async () => {
         const [ id, property ] = await Promise.all([
           getReservedItemId(),
           getSandboxPropertyId('quantity')
         ])
-        const res = await wbEdit.claim.create({
+        await wbEdit.entity.edit({
           id,
-          property,
-          value: { amount: 258.82, unit: 'Q712226' },
+          claims: {
+            [property]: [
+              { amount: 258.82, unit: 'Q712226' },
+              { amount: '+258', lowerBound: '+256', upperBound: '+259' },
+            ]
+          }
         })
-        const res2 = await wbEdit.claim.create({
+        const res2 = await wbEdit.entity.edit({
           id,
-          property,
-          value: 258.82,
+          claims: {
+            [property]: [
+              258.82,
+              '+258',
+            ]
+          },
           reconciliation: {
             mode: 'merge',
           }
         })
-        res.claim.id.should.equal(res2.claim.id)
+        simplify.claims(res2.entity.claims, { keepRichValues: true }).should.deepEqual({
+          [property]: [
+            { amount: 258.82, unit: 'Q712226' },
+            { amount: 258, lowerBound: 256, upperBound: 259, unit: '1' },
+          ]
+        })
       })
 
-      it('should not ignore explicit unit differences', async () => {
+      it('should not ignore specified parameters', async () => {
         const [ id, property ] = await Promise.all([
           getReservedItemId(),
           getSandboxPropertyId('quantity')
         ])
-        const res = await wbEdit.claim.create({
+        await wbEdit.entity.edit({
           id,
-          property,
-          value: { amount: 258.82, unit: 'Q712226' },
+          claims: {
+            [property]: [
+              { amount: 258.82, unit: 'Q712226' },
+              { amount: '+258', lowerBound: '+256', upperBound: '+259' },
+            ]
+          }
         })
-        const res2 = await wbEdit.claim.create({
+        const res2 = await wbEdit.entity.edit({
           id,
-          property,
-          value: { amount: 258.82, unit: 'Q712227' },
+          claims: {
+            [property]: [
+              { amount: 258.82, unit: 'Q712227' },
+              { amount: '+258', lowerBound: '+255', upperBound: '+259' },
+            ]
+          },
           reconciliation: {
             mode: 'merge',
           }
         })
-        res.claim.id.should.not.equal(res2.claim.id)
+        simplify.claims(res2.entity.claims, { keepRichValues: true }).should.deepEqual({
+          [property]: [
+            { amount: 258.82, unit: 'Q712226' },
+            { amount: 258, lowerBound: 256, upperBound: 259, unit: '1' },
+            { amount: 258.82, unit: 'Q712227' },
+            { amount: 258, lowerBound: 255, upperBound: 259, unit: '1' },
+          ]
+        })
       })
     })
   })
