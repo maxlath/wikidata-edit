@@ -330,5 +330,45 @@ describe('create with reconciliation', function () {
         })
       })
     })
+
+    describe('globe-coordinate', () => {
+      it('should support quantity statements', async () => {
+        const [ id, property ] = await Promise.all([
+          getReservedItemId(),
+          getSandboxPropertyId('globe-coordinate')
+        ])
+        await wbEdit.entity.edit({
+          id,
+          claims: {
+            [property]: [
+              { value: coordObj(1, 23), qualifiers: { [property]: [ coordObj(4, 56) ] } },
+              { value: coordObj(7, 89), qualifiers: { [property]: [ coordObj(3, 21) ] } },
+            ]
+          }
+        })
+        const res2 = await wbEdit.entity.edit({
+          id,
+          claims: {
+            [property]: [
+              { value: coordObj(1, 23), qualifiers: { [property]: [ coordObj(9, 87) ] } },
+              { value: coordObj(6, 54), qualifiers: { [property]: [ coordObj(3, 21) ] } },
+            ]
+          },
+          reconciliation: {
+            mode: 'merge',
+          }
+        })
+        simplify.claims(res2.entity.claims, { keepQualifiers: true, keepRichValues: true }).should.deepEqual({
+          [property]: [
+            { value: coordObj(1, 23), qualifiers: { [property]: [ coordObj(4, 56), coordObj(9, 87) ] } },
+            { value: coordObj(7, 89), qualifiers: { [property]: [ coordObj(3, 21) ] } },
+            { value: coordObj(6, 54), qualifiers: { [property]: [ coordObj(3, 21) ] } },
+          ]
+        })
+      })
+    })
   })
 })
+
+const earth = 'http://www.wikidata.org/entity/Q2'
+const coordObj = (latitude, longitude) => ({ latitude, longitude, precision: 1 / 3600, globe: earth, altitude: null })
