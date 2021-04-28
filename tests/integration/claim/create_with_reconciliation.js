@@ -367,6 +367,43 @@ describe('create with reconciliation', function () {
         })
       })
     })
+
+    describe('monolingualtext', () => {
+      it('should support quantity statements', async () => {
+        const [ id, property ] = await Promise.all([
+          getReservedItemId(),
+          getSandboxPropertyId('monolingualtext')
+        ])
+        await wbEdit.entity.edit({
+          id,
+          claims: {
+            [property]: [
+              { value: { text: 'a', language: 'en' }, qualifiers: { [property]: [ { text: 'z', language: 'en' } ] } },
+              { value: { text: 'b', language: 'nl' }, qualifiers: { [property]: [ { text: 'y', language: 'de' } ] } },
+            ]
+          }
+        })
+        const res2 = await wbEdit.entity.edit({
+          id,
+          claims: {
+            [property]: [
+              { value: { text: 'a', language: 'en' }, qualifiers: { [property]: [ { text: 'x', language: 'en' } ] } },
+              { value: { text: 'b', language: 'fr' }, qualifiers: { [property]: [ { text: 'y', language: 'de' } ] } },
+            ]
+          },
+          reconciliation: {
+            mode: 'merge',
+          }
+        })
+        simplify.claims(res2.entity.claims, { keepQualifiers: true, keepRichValues: true }).should.deepEqual({
+          [property]: [
+            { value: { text: 'a', language: 'en' }, qualifiers: { [property]: [ { text: 'z', language: 'en' }, { text: 'x', language: 'en' } ] } },
+            { value: { text: 'b', language: 'nl' }, qualifiers: { [property]: [ { text: 'y', language: 'de' } ] } },
+            { value: { text: 'b', language: 'fr' }, qualifiers: { [property]: [ { text: 'y', language: 'de' } ] } },
+          ]
+        })
+      })
+    })
   })
 })
 
