@@ -224,41 +224,82 @@ describe('create with reconciliation', function () {
       })
     })
 
-    it('should support quantity statements', async () => {
-      const [ id, property ] = await Promise.all([
-        getReservedItemId(),
-        getSandboxPropertyId('quantity')
-      ])
-      await wbEdit.entity.edit({
-        id,
-        claims: {
+    describe('quantity', () => {
+      it('should support quantity statements', async () => {
+        const [ id, property ] = await Promise.all([
+          getReservedItemId(),
+          getSandboxPropertyId('quantity')
+        ])
+        await wbEdit.entity.edit({
+          id,
+          claims: {
+            [property]: [
+              { value: 123, qualifiers: { [property]: 456 } },
+              { value: 789, qualifiers: { [property]: 321 } },
+            ]
+          }
+        })
+        const res2 = await wbEdit.entity.edit({
+          id,
+          claims: {
+            [property]: [
+              { value: 123, qualifiers: { [property]: 987 } },
+              { value: 654, qualifiers: { [property]: 321 } },
+            ]
+          },
+          reconciliation: {
+            mode: 'merge',
+          }
+        })
+        simplify.claims(res2.entity.claims, { keepQualifiers: true }).should.deepEqual({
           [property]: [
-            { value: 123, qualifiers: { [property]: 456 } },
-            { value: 789, qualifiers: { [property]: 321 } },
-            { value: { amount: 258.82, unit: 'Q712226' } },
+            { value: 123, qualifiers: { [property]: [ 456, 987 ] } },
+            { value: 789, qualifiers: { [property]: [ 321 ] } },
+            { value: 654, qualifiers: { [property]: [ 321 ] } },
           ]
-        }
+        })
       })
-      const res2 = await wbEdit.entity.edit({
-        id,
-        claims: {
-          [property]: [
-            { value: 123, qualifiers: { [property]: 987 } },
-            { value: 654, qualifiers: { [property]: 321 } },
-            { value: { amount: 258.82, unit: 'Q712226' }, qualifiers: { [property]: 634 } },
-          ]
-        },
-        reconciliation: {
-          mode: 'merge',
-        }
+
+      it('should ignore an unspecified unit', async () => {
+        const [ id, property ] = await Promise.all([
+          getReservedItemId(),
+          getSandboxPropertyId('quantity')
+        ])
+        const res = await wbEdit.claim.create({
+          id,
+          property,
+          value: { amount: 258.82, unit: 'Q712226' },
+        })
+        const res2 = await wbEdit.claim.create({
+          id,
+          property,
+          value: 258.82,
+          reconciliation: {
+            mode: 'merge',
+          }
+        })
+        res.claim.id.should.equal(res2.claim.id)
       })
-      simplify.claims(res2.entity.claims, { keepQualifiers: true, keepRichValues: true }).should.deepEqual({
-        [property]: [
-          { value: { amount: 123, unit: '1' }, qualifiers: { [property]: [ { amount: 456, unit: '1' }, { amount: 987, unit: '1' } ] } },
-          { value: { amount: 789, unit: '1' }, qualifiers: { [property]: [ { amount: 321, unit: '1' } ] } },
-          { value: { amount: 258.82, unit: 'Q712226' }, qualifiers: { [property]: [ { amount: 634, unit: '1' } ] } },
-          { value: { amount: 654, unit: '1' }, qualifiers: { [property]: [ { amount: 321, unit: '1' } ] } },
-        ]
+
+      it('should not ignore explicit unit differences', async () => {
+        const [ id, property ] = await Promise.all([
+          getReservedItemId(),
+          getSandboxPropertyId('quantity')
+        ])
+        const res = await wbEdit.claim.create({
+          id,
+          property,
+          value: { amount: 258.82, unit: 'Q712226' },
+        })
+        const res2 = await wbEdit.claim.create({
+          id,
+          property,
+          value: { amount: 258.82, unit: 'Q712227' },
+          reconciliation: {
+            mode: 'merge',
+          }
+        })
+        res.claim.id.should.not.equal(res2.claim.id)
       })
     })
   })
