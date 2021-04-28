@@ -187,4 +187,76 @@ describe('create with reconciliation', function () {
       simplify.references(res2.claim.references).should.deepEqual([ { [property]: [ 'buzz' ] } ])
     })
   })
+
+  describe('datatypes', () => {
+    it('should support string statements', async () => {
+      const [ id, property ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('string')
+      ])
+      await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'foo', qualifiers: { [property]: 'buzz' } },
+            { value: 'bar', qualifiers: { [property]: 'bla' } },
+          ]
+        }
+      })
+      const res2 = await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'foo', qualifiers: { [property]: 'blo' } },
+            { value: 'bli', qualifiers: { [property]: 'bla' } },
+          ]
+        },
+        reconciliation: {
+          mode: 'merge',
+        }
+      })
+      simplify.claims(res2.entity.claims, { keepQualifiers: true }).should.deepEqual({
+        [property]: [
+          { value: 'foo', qualifiers: { [property]: [ 'buzz', 'blo' ] } },
+          { value: 'bar', qualifiers: { [property]: [ 'bla' ] } },
+          { value: 'bli', qualifiers: { [property]: [ 'bla' ] } },
+        ]
+      })
+    })
+
+    it('should support quantity statements', async () => {
+      const [ id, property ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('quantity')
+      ])
+      await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 123, qualifiers: { [property]: 456 } },
+            { value: 789, qualifiers: { [property]: 321 } },
+          ]
+        }
+      })
+      const res2 = await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 123, qualifiers: { [property]: 987 } },
+            { value: 654, qualifiers: { [property]: 321 } },
+          ]
+        },
+        reconciliation: {
+          mode: 'merge',
+        }
+      })
+      simplify.claims(res2.entity.claims, { keepQualifiers: true }).should.deepEqual({
+        [property]: [
+          { value: 123, qualifiers: { [property]: [ 456, 987 ] } },
+          { value: 789, qualifiers: { [property]: [ 321 ] } },
+          { value: 654, qualifiers: { [property]: [ 321 ] } },
+        ]
+      })
+    })
+  })
 })
