@@ -235,6 +235,7 @@ describe('create with reconciliation', function () {
           [property]: [
             { value: 123, qualifiers: { [property]: 456 } },
             { value: 789, qualifiers: { [property]: 321 } },
+            { value: { amount: 258.82, unit: 'Q712226' } },
           ]
         }
       })
@@ -244,17 +245,19 @@ describe('create with reconciliation', function () {
           [property]: [
             { value: 123, qualifiers: { [property]: 987 } },
             { value: 654, qualifiers: { [property]: 321 } },
+            { value: { amount: 258.82, unit: 'Q712226' }, qualifiers: { [property]: 634 } },
           ]
         },
         reconciliation: {
           mode: 'merge',
         }
       })
-      simplify.claims(res2.entity.claims, { keepQualifiers: true }).should.deepEqual({
+      simplify.claims(res2.entity.claims, { keepQualifiers: true, keepRichValues: true }).should.deepEqual({
         [property]: [
-          { value: 123, qualifiers: { [property]: [ 456, 987 ] } },
-          { value: 789, qualifiers: { [property]: [ 321 ] } },
-          { value: 654, qualifiers: { [property]: [ 321 ] } },
+          { value: { amount: 123, unit: '1' }, qualifiers: { [property]: [ { amount: 456, unit: '1' }, { amount: 987, unit: '1' } ] } },
+          { value: { amount: 789, unit: '1' }, qualifiers: { [property]: [ { amount: 321, unit: '1' } ] } },
+          { value: { amount: 258.82, unit: 'Q712226' }, qualifiers: { [property]: [ { amount: 634, unit: '1' } ] } },
+          { value: { amount: 654, unit: '1' }, qualifiers: { [property]: [ { amount: 321, unit: '1' } ] } },
         ]
       })
     })
