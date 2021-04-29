@@ -32,6 +32,20 @@ describe('create with reconciliation', function () {
       .catch(err => {
         err.message.should.equal('invalid parameter: reconciliationz')
       })
+
+      await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: {
+            value: 'foo',
+            reconciliationz: {}
+          }
+        },
+      })
+      .then(shouldNotBeCalled)
+      .catch(err => {
+        err.message.should.equal('invalid claim parameter: reconciliationz')
+      })
     })
 
     it('should not re-add an existing statement', async () => {
