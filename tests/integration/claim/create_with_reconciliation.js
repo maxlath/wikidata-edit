@@ -3,12 +3,37 @@ const config = require('config')
 const wbEdit = require('root')(config)
 const { getSandboxPropertyId, getReservedItemId } = require('tests/integration/utils/sandbox_entities')
 const { simplify } = require('wikibase-sdk')
+const { shouldNotBeCalled } = require('../utils/utils')
 
 describe('create with reconciliation', function () {
   this.timeout(20 * 1000)
   before('wait for instance', require('tests/integration/utils/wait_for_instance'))
 
   describe('merge', () => {
+    it('should reject a reconciliation object with a typo', async () => {
+      const [ id, property ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('string')
+      ])
+      await wbEdit.claim.create({ id, property, value: 'foo', reconciliationz: {} })
+      .then(shouldNotBeCalled)
+      .catch(err => {
+        err.message.should.equal('invalid parameter: reconciliationz')
+      })
+
+      await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: 'foo'
+        },
+        reconciliationz: {}
+      })
+      .then(shouldNotBeCalled)
+      .catch(err => {
+        err.message.should.equal('invalid parameter: reconciliationz')
+      })
+    })
+
     it('should not re-add an existing statement', async () => {
       const [ id, property ] = await Promise.all([
         getReservedItemId(),

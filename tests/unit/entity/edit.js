@@ -18,7 +18,7 @@ describe('entity edit', () => {
     await editEntity(params)
     .then(shouldNotBeCalled)
     .catch(err => {
-      err.message.should.equal('invalid parameter')
+      err.message.should.startWith('invalid parameter')
       err.context.parameter.should.equal('P2')
     })
   })
