@@ -132,6 +132,42 @@ describe('create with reconciliation', function () {
       ])
     })
 
+    it('should merge matching reference records', async () => {
+      const [ id, property, property2, property3 ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('string'),
+        getSandboxPropertyId('quantity'),
+        getSandboxPropertyId('wikibase-item'),
+      ])
+      await wbEdit.claim.create({
+        id,
+        property,
+        value: 'foo',
+        references: [
+          { [property]: 'bar' },
+          { [property2]: 456 },
+        ]
+      })
+      const res2 = await wbEdit.claim.create({
+        id,
+        property,
+        value: 'foo',
+        references: [
+          { [property]: 'bar', [property2]: 123 },
+          { [property2]: 456, [property3]: id },
+        ],
+        reconciliation: {
+          mode: 'merge',
+          matchingReferences: [ property ],
+        }
+      })
+      simplify.references(res2.claim.references).should.deepEqual([
+        { [property2]: [ 123 ], [property]: [ 'bar' ] },
+        { [property2]: [ 456 ] },
+        { [property2]: [ 456 ], [property3]: [ id ] },
+      ])
+    })
+
     it('should add a different reference record', async () => {
       const [ id, property, property2 ] = await Promise.all([
         getReservedItemId(),
