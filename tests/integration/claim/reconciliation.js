@@ -503,6 +503,42 @@ describe('create with reconciliation', function () {
       })
     })
   })
+
+  describe('per-claim reconciliation settings', () => {
+    it('should accept per-claim reconciliation settings', async () => {
+      const [ id, property ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('string')
+      ])
+      await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'foo', qualifiers: { [property]: 'buzz' } },
+            { value: 'bar', qualifiers: { [property]: 'bla' } },
+          ]
+        }
+      })
+      const res2 = await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'foo', qualifiers: { [property]: 'blo' } },
+            { value: 'bar', qualifiers: { [property]: 'bli' }, reconciliation: { mode: 'skip' } },
+          ]
+        },
+        reconciliation: {
+          mode: 'merge',
+        }
+      })
+      simplify.claims(res2.entity.claims, { keepQualifiers: true }).should.deepEqual({
+        [property]: [
+          { value: 'foo', qualifiers: { [property]: [ 'buzz', 'blo' ] } },
+          { value: 'bar', qualifiers: { [property]: [ 'bla' ] } },
+        ]
+      })
+    })
+  })
 })
 
 const earth = 'http://www.wikidata.org/entity/Q2'
