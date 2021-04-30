@@ -555,7 +555,7 @@ describe('create with reconciliation', function () {
   })
 
   describe('remove', () => {
-    it('should remove a matching claim', async () => {
+    it('should remove matching claims', async () => {
       const [ id, property ] = await Promise.all([
         getReservedItemId(),
         getSandboxPropertyId('string')
@@ -564,6 +564,7 @@ describe('create with reconciliation', function () {
         id,
         claims: {
           [property]: [
+            { value: 'foo' },
             { value: 'foo' },
             { value: 'bar', qualifiers: { [property]: [ 'buzz' ] } },
             { value: 'bar', qualifiers: { [property]: [ 'bla' ] } },
