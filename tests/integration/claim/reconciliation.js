@@ -591,6 +591,34 @@ describe('create with reconciliation', function () {
         ]
       })
     })
+
+    it('should reject matching several times the same claim', async () => {
+      const [ id, property ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('string')
+      ])
+      await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'foo' },
+          ]
+        }
+      })
+      await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'foo', remove: true, reconciliation: {} },
+            { value: 'foo', remove: true, reconciliation: {} },
+          ]
+        },
+      })
+      .then(shouldNotBeCalled)
+      .catch(err => {
+        err.message.should.equal('can not match several times the same claim')
+      })
+    })
   })
 })
 
