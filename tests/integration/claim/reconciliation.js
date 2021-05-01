@@ -48,6 +48,22 @@ describe('create with reconciliation', function () {
       })
     })
 
+    it('should add a statement when no statement exists', async () => {
+      const [ id, property ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('string')
+      ])
+      const res = await wbEdit.claim.create({
+        id,
+        property,
+        value: 'foo',
+        reconciliation: {
+          mode: 'merge',
+        }
+      })
+      res.claim.mainsnak.datavalue.value.should.equal('foo')
+    })
+
     it('should not re-add an existing statement', async () => {
       const [ id, property ] = await Promise.all([
         getReservedItemId(),
@@ -216,6 +232,22 @@ describe('create with reconciliation', function () {
   })
 
   describe('skip', () => {
+    it('should add a statement when no statement exists', async () => {
+      const [ id, property ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('string')
+      ])
+      const res = await wbEdit.claim.create({
+        id,
+        property,
+        value: 'foo',
+        reconciliation: {
+          mode: 'skip',
+        }
+      })
+      res.claim.mainsnak.datavalue.value.should.equal('foo')
+    })
+
     it('should not re-add an existing statement', async () => {
       const [ id, property ] = await Promise.all([
         getReservedItemId(),
