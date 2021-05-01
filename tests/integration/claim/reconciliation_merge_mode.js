@@ -91,7 +91,7 @@ describe('reconciliation: merge mode', function () {
     res2.claim.qualifiers[property2].map(simplify.qualifier).should.deepEqual([ 123 ])
   })
 
-  it('should not add an identical reference record', async () => {
+  it('should not add an identical reference', async () => {
     const [ id, property, property2 ] = await Promise.all([
       getReservedItemId(),
       getSandboxPropertyId('string'),
@@ -122,7 +122,7 @@ describe('reconciliation: merge mode', function () {
     ])
   })
 
-  it('should merge matching reference records', async () => {
+  it('should merge matching references', async () => {
     const [ id, property, property2, property3 ] = await Promise.all([
       getReservedItemId(),
       getSandboxPropertyId('string'),
@@ -158,7 +158,7 @@ describe('reconciliation: merge mode', function () {
     ])
   })
 
-  it('should add a different reference record', async () => {
+  it('should add a different reference', async () => {
     const [ id, property, property2 ] = await Promise.all([
       getReservedItemId(),
       getSandboxPropertyId('string'),

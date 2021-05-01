@@ -841,7 +841,7 @@ wbEdit.reference.set({
   guid,
   hash: referenceHash,
   snaks: {
-    // Will override all existing snaks of that reference record with this unique snak
+    // Will override all existing snaks of that reference with this unique snak
     P854: 'https://example.org/rise-and-fall-of-the-holy-sand-box'
   }
 })
@@ -923,9 +923,9 @@ wbEdit.entity.edit({
           P1106: { amount: 9001, unit: 'Q7727', lowerBound: 9000, upperBound: 9315 }
         }
       },
-      // References can be passed as a single record group
+      // References can be passed as a single reference group
       { value: 'Q2622004', references: { P143: 'Q8447' } },
-      // or as multiple records
+      // or as multiple references groups
       {
         value: 'Q2622009',
         references: [
