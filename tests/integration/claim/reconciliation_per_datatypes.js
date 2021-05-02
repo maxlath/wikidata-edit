@@ -262,6 +262,70 @@ describe('reconciliation: per datatypes', function () {
       })
     })
   })
+
+  describe('url', () => {
+    it('should ignore trailing slashes', async () => {
+      const [ id, property ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('url')
+      ])
+      await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'https://www.wikidata.org/' },
+            { value: 'https://wikiba.se' },
+          ]
+        }
+      })
+      const res2 = await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'https://www.wikidata.org' },
+            { value: 'https://wikiba.se/' },
+          ]
+        },
+        reconciliation: {
+          mode: 'merge',
+        }
+      })
+      simplify.claims(res2.entity.claims).should.deepEqual({
+        [property]: [ 'https://www.wikidata.org/', 'https://wikiba.se' ],
+      })
+    })
+
+    it('should ignore the presence or absence of www subdomain', async () => {
+      const [ id, property ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('url')
+      ])
+      await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'https://www.wikidata.org' },
+            { value: 'https://wikiba.se' },
+          ]
+        }
+      })
+      const res2 = await wbEdit.entity.edit({
+        id,
+        claims: {
+          [property]: [
+            { value: 'https://wikidata.org' },
+            { value: 'https://www.wikiba.se' },
+          ]
+        },
+        reconciliation: {
+          mode: 'merge',
+        }
+      })
+      simplify.claims(res2.entity.claims).should.deepEqual({
+        [property]: [ 'https://www.wikidata.org', 'https://wikiba.se' ],
+      })
+    })
+  })
 })
 
 const earth = 'http://www.wikidata.org/entity/Q2'
