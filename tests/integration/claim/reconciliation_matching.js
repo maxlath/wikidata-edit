@@ -30,7 +30,7 @@ describe('reconciliation: matching', function () {
           [property]: [ 'bar' ]
         },
         reconciliation: {
-          mode: 'skip',
+          mode: 'skip-on-value-match',
           matchingQualifiers: [ property ]
         }
       })
@@ -43,7 +43,7 @@ describe('reconciliation: matching', function () {
           [property]: [ 'bar', 'buzz', 'bla' ]
         },
         reconciliation: {
-          mode: 'skip',
+          mode: 'skip-on-value-match',
           matchingQualifiers: [ property ]
         }
       })
@@ -72,7 +72,7 @@ describe('reconciliation: matching', function () {
           [property]: [ 'bar' ]
         },
         reconciliation: {
-          mode: 'skip',
+          mode: 'skip-on-value-match',
           matchingQualifiers: [ `${property}:any` ]
         }
       })
@@ -85,7 +85,7 @@ describe('reconciliation: matching', function () {
           [property]: [ 'bar', 'buzz', 'bla' ]
         },
         reconciliation: {
-          mode: 'skip',
+          mode: 'skip-on-value-match',
           matchingQualifiers: [ `${property}:any` ]
         }
       })

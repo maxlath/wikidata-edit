@@ -67,7 +67,7 @@ describe('reconciliation: general', function () {
         claims: {
           [property]: [
             { value: 'foo', qualifiers: { [property]: 'blo' } },
-            { value: 'bar', qualifiers: { [property]: 'bli' }, reconciliation: { mode: 'skip' } },
+            { value: 'bar', qualifiers: { [property]: 'bli' }, reconciliation: { mode: 'skip-on-value-match' } },
           ]
         },
         reconciliation: {

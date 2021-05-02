@@ -4,7 +4,7 @@ const wbEdit = require('root')(config)
 const { getSandboxPropertyId, getReservedItemId } = require('tests/integration/utils/sandbox_entities')
 const { simplify } = require('wikibase-sdk')
 
-describe('reconciliation: skip mode', function () {
+describe('reconciliation: skip-on-value-match mode', function () {
   this.timeout(20 * 1000)
   before('wait for instance', require('tests/integration/utils/wait_for_instance'))
 
@@ -18,7 +18,7 @@ describe('reconciliation: skip mode', function () {
       property,
       value: 'foo',
       reconciliation: {
-        mode: 'skip',
+        mode: 'skip-on-value-match',
       }
     })
     res.claim.mainsnak.datavalue.value.should.equal('foo')
@@ -35,7 +35,7 @@ describe('reconciliation: skip mode', function () {
       property,
       value: 'foo',
       reconciliation: {
-        mode: 'skip',
+        mode: 'skip-on-value-match',
       }
     })
     res2.claim.id.should.equal(res.claim.id)
@@ -61,7 +61,7 @@ describe('reconciliation: skip mode', function () {
       qualifiers: { [property]: 'bla' },
       references: { [property]: 'blu' },
       reconciliation: {
-        mode: 'skip',
+        mode: 'skip-on-value-match',
       }
     })
     res2.claim.id.should.equal(res.claim.id)
