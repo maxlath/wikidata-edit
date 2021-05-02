@@ -95,16 +95,18 @@ describe('reconciliation: matching', function () {
 
   describe('references', () => {
     it('should match on all specified reference properties by default', async () => {
-      const [ id, property ] = await Promise.all([
+      const [ id, property, property2 ] = await Promise.all([
         getReservedItemId(),
-        getSandboxPropertyId('string')
+        getSandboxPropertyId('string'),
+        getSandboxPropertyId('quantity'),
       ])
       const res = await wbEdit.claim.create({
         id,
         property,
         value: 'foo',
         references: {
-          [property]: [ 'bar', 'buzz' ]
+          [property]: [ 'bar', 'buzz' ],
+          [property2]: 123
         }
       })
       const res2 = await wbEdit.claim.create({
@@ -112,7 +114,8 @@ describe('reconciliation: matching', function () {
         property,
         value: 'foo',
         references: {
-          [property]: [ 'bar', 'buzz' ]
+          [property]: [ 'bar', 'buzz' ],
+          [property2]: 456
         },
         reconciliation: {
           mode: 'merge',
@@ -121,14 +124,15 @@ describe('reconciliation: matching', function () {
       })
       res2.claim.id.should.equal(res.claim.id)
       simplify.references(res2.claim.references).should.deepEqual([
-        { [property]: [ 'bar', 'buzz' ] }
+        { [property]: [ 'bar', 'buzz' ], [property2]: [ 123, 456 ] },
       ])
       const res3 = await wbEdit.claim.create({
         id,
         property,
         value: 'foo',
         references: {
-          [property]: [ 'bar', 'buzz', 'bla' ]
+          [property]: [ 'bar', 'buzz', 'bla' ],
+          [property2]: 789
         },
         reconciliation: {
           mode: 'merge',
@@ -137,8 +141,59 @@ describe('reconciliation: matching', function () {
       })
       res3.claim.id.should.equal(res.claim.id)
       simplify.references(res3.claim.references).should.deepEqual([
-        { [property]: [ 'bar', 'buzz' ] },
-        { [property]: [ 'bar', 'buzz', 'bla' ] },
+        { [property]: [ 'bar', 'buzz' ], [property2]: [ 123, 456 ] },
+        { [property]: [ 'bar', 'buzz', 'bla' ], [property2]: [ 789 ] },
+      ])
+    })
+
+    it('should match on any specified reference properties when requested', async () => {
+      const [ id, property, property2 ] = await Promise.all([
+        getReservedItemId(),
+        getSandboxPropertyId('string'),
+        getSandboxPropertyId('quantity'),
+      ])
+      const res = await wbEdit.claim.create({
+        id,
+        property,
+        value: 'foo',
+        references: {
+          [property]: [ 'bar', 'buzz' ],
+          [property2]: 123,
+        }
+      })
+      const res2 = await wbEdit.claim.create({
+        id,
+        property,
+        value: 'foo',
+        references: {
+          [property]: [ 'bar' ],
+          [property2]: 123,
+        },
+        reconciliation: {
+          mode: 'merge',
+          matchingReferences: [ `${property}:any` ]
+        }
+      })
+      res2.claim.id.should.equal(res.claim.id)
+      simplify.references(res2.claim.references).should.deepEqual([
+        { [property]: [ 'bar', 'buzz' ], [property2]: [ 123 ] }
+      ])
+      const res3 = await wbEdit.claim.create({
+        id,
+        property,
+        value: 'foo',
+        references: {
+          [property]: [ 'bar', 'buzz', 'bla' ],
+          [property2]: 456,
+        },
+        reconciliation: {
+          mode: 'merge',
+          matchingReferences: [ `${property}:any` ]
+        }
+      })
+      res3.claim.id.should.equal(res.claim.id)
+      simplify.references(res3.claim.references).should.deepEqual([
+        { [property]: [ 'bar', 'buzz', 'bla' ], [property2]: [ 123, 456 ] },
       ])
     })
   })
