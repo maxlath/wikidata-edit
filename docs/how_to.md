@@ -69,6 +69,14 @@
       - [delete item](#delete-item)
       - [delete property](#delete-property)
   - [get auth data](#get-auth-data)
+- [Reconciliation](#reconciliation)
+  - [matching](#matching)
+    - [claim matching](#claim-matching)
+    - [reference matching](#reference-matching)
+  - [reconciliation modes](#reconciliation-modes)
+    - [skip-on-any-value mode](#skip-on-any-value-mode)
+    - [skip-on-value-match mode](#skip-on-value-match-mode)
+    - [merge mode](#merge-mode)
 - [Tips](#tips)
   - [How to get a claim guid](#how-to-get-a-claim-guid)
 
@@ -380,6 +388,8 @@ wbEdit.alias.set({
 
 ### Claim
 #### create claim
+**NB**: **By default, no check is performed to see if the claims values already exist**. To perform this kind of check and avoid creating duplicated claims, see the section on **[reconciliation](#reconciliation)**.
+
 ```js
 // Simplest case
 wbEdit.claim.create({
@@ -670,6 +680,29 @@ wbEdit.claim.remove({ guid: guids })
 
 See also: [How to get a claim guid](#how-to-get-a-claim-guid)
 
+Removing claims by their `guids` is the most relyable way, but it can also convenient to just specify claims to be removed from their value:
+```js
+await wbEdit.claim.remove({
+  id: 'Q4115189',
+  property: 'P123',
+  value: 'Q3208426'
+})
+```
+
+To customize the way the claims to remove are found, a `reconciliation` object can be passed (see the section on [reconciliation](#reconciliation) for more details)).
+
+```js
+await wbEdit.claim.remove({
+  id: 'Q4115189',
+  property: 'P123',
+  value: 'Q3208426',
+  qualifiers: { P370: 'foo' },
+  reconciliation: {
+    matchingQualifiers: [ 'P370' ]
+  }
+})
+```
+
 ### Qualifier
 
 Those functions require to know about [claim guid](#how-to-get-a-claim-guid).
@@ -866,6 +899,8 @@ Make many edits on an entity at once.
 ##### incremental mode
 By default, every label, description, claim, or sitelink that isn't included in the passed object will stay untouched: only those with a `remove` flag will be removed. Beware that this isn't true for qualifiers and references, which can be removed by just being omitted (see P1114 example below).
 
+**NB**: **By default, no check is performed to see if the claims values already exist**. To perform this kind of check and avoid creating duplicated claims, see the section on **[reconciliation](#reconciliation)**.
+
 ```js
 wbEdit.entity.edit({
   // Required
@@ -1032,6 +1067,113 @@ It can also be used as a way to validate credentials:
 require('wikibase-edit')({ instance, credentials }).getAuthData()
 .then(onValidCredentials)
 .catch(onInvalidCredentials)
+```
+
+## Reconciliation
+
+Several functions accept a `reconciliation` object, allowing to customize how the input is matched to existing claims, and what should be done once a match is established:
+* [`entity.edit`](#edit-entity)
+* [`claim.create`](#create-claim)
+* [`claim.remove`](#remove-claim)
+
+### matching
+#### claim matching
+By default, a claim is considered to be matching if its value (a.k.a. `mainsnak`) is matching.
+
+To also require to take qualifiers in consideration, when determining if a claim is matching, you can specify an array of `matchingQualifiers` properties. Example:
+```js
+{
+  reconciliation: {
+    matchingQualifiers: [ 'P580', 'P582' ]
+    // The line above is equivalent to
+    matchingQualifiers: [ 'P580:all', 'P582:all' ]
+    // that is that all qualifiers in the input should match qualifiers
+    // on the existing claim for the claim to be considered a match.
+    // To match on any qualifier for each of those properties instead, you could add the suffix `any`
+    matchingQualifiers: [ 'P580:any', 'P582:any' ]
+  }
+}
+```
+
+#### reference matching
+Once a claim is determined as matching (be it only from its `mainsnak` value or also taking its `qualifiers` into account), references can also be matched by specifying a `matchingReferences` array, but this is specific to references and won't influence the claim matching. It is just a way, once a matching claim is found, to avoid creating duplicated references.
+```js
+{
+  reconciliation: {
+    matchingReferences: [ 'P854', 'P813' ]
+    // The line above is equivalent to
+    matchingQualifiers: [ 'P854:all', 'P813:all' ]
+    // that is that all reference snaks in the input should match reference snaks
+    // on an existing reference for the reference to be considered a match.
+    // To match on any reference snak for each of those properties instead, you could add the suffix `any`
+    matchingQualifiers: [ 'P854:any', 'P813:any' ]
+  }
+}
+```
+
+### reconciliation modes
+Once a claim is determined as matching, several modes can be used to determine what should be done with that matching claim. This also applies to matching references.
+
+#### skip-on-any-value mode
+* Checks if there is already a statement for that property, whatever the value
+* If any statement is found, no change is performed on that statement, no new statement is added either
+
+```js
+wbEdit.entity.edit({
+  id: 'Q4115189',
+  reconciliation: {
+    mode: 'skip-on-any-value'
+  },
+  claims: {
+    // If Q4115189 already has a P1775 claim, this won't add anything
+    P1775: [
+      'Q3576110',
+    ]
+  },
+})
+```
+
+#### skip-on-value-match mode
+* Checks if there is a statement with the specified value
+* If a matching statement is found, no change is performed on that statement, no new statement is added either
+
+```js
+wbEdit.entity.edit({
+  id: 'Q4115189',
+  reconciliation: {
+    mode: 'skip-on-value-match'
+  },
+  claims: {
+    // Those new values will only be added if there is no P1775 statement with those values
+    P1775: [
+      'Q3576110',
+    ]
+  },
+})
+```
+
+#### merge mode
+* Checks if there is a statement with the specified value
+* If a matching statement is found, no change is performed on that statement, no new statement is added either
+
+```js
+wbEdit.entity.edit({
+  id: 'Q4115189',
+  claims: {
+    P1775: [ 'Q3576110', 'Q12206942' ]
+  },
+  reconciliation: {
+    mode: 'merge'
+  }
+})
+```
+If the initial state was
+```js
+{ id: 'Q4115189', claims: { P1775: [ 'Q3576110' ] }
+```
+after this edit it will be
+```js
+{ id: 'Q4115189', claims: { P1775: [ 'Q3576110', 'Q12206942' ] }
 ```
 
 ## Tips
