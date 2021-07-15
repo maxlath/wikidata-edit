@@ -87,6 +87,8 @@ const getSomeGuid = async () => {
 module.exports = {
   getSandboxItem,
   getSandboxItemId,
+  getReservedItem: createItem,
+  getReservedItemId: () => createItem().then(entity => entity.id),
   getSandboxPropertyId,
   getRefreshedEntity,
   getRefreshedClaim,

@@ -4,6 +4,7 @@ const wbEdit = require('root')(config)
 const { randomString } = require('tests/unit/utils')
 const { getSandboxPropertyId } = require('tests/integration/utils/sandbox_entities')
 const { addClaim } = require('tests/integration/utils/sandbox_snaks')
+const { shouldNotBeCalled } = require('../utils/utils')
 
 describe('claim create', function () {
   this.timeout(20 * 1000)
@@ -25,6 +26,84 @@ describe('claim create', function () {
     const res2 = await wbEdit.claim.remove({ guid: guids })
     res2.success.should.equal(1)
     res2.claims.should.deepEqual(guids)
+  })
+
+  it('should remove a claim by matching value', async () => {
+    const { guid, id, property, claim } = await addClaim({ datatype: 'string', value: randomString() })
+    const value = claim.mainsnak.datavalue.value
+    const res = await wbEdit.claim.remove({ id, property, value })
+    res.success.should.equal(1)
+    res.claims.should.deepEqual([ guid ])
+  })
+
+  it('should remove a claim with qualifiers by matching mainsnak value', async () => {
+    const somePropertyId = await getSandboxPropertyId('string')
+    const value = randomString()
+    const qualifierValue = randomString()
+    const { guid, id, property } = await addClaim({
+      datatype: 'string',
+      value,
+      qualifiers: {
+        [somePropertyId]: qualifierValue,
+      },
+    })
+    const res = await wbEdit.claim.remove({
+      id,
+      property,
+      value,
+      qualifiers: { [somePropertyId]: qualifierValue },
+    })
+    res.success.should.equal(1)
+    res.claims.should.deepEqual([ guid ])
+  })
+
+  it('should remove a claim with qualifiers by matching mainsnak value', async () => {
+    const somePropertyId = await getSandboxPropertyId('string')
+    const value = randomString()
+    const qualifierValue = randomString()
+    const { guid, id, property } = await addClaim({
+      datatype: 'string',
+      value,
+      qualifiers: {
+        [somePropertyId]: qualifierValue,
+      },
+    })
+    const res = await wbEdit.claim.remove({
+      id,
+      property,
+      value,
+      qualifiers: { [somePropertyId]: qualifierValue },
+      reconciliation: {
+        matchingQualifiers: [ somePropertyId ]
+      }
+    })
+    res.success.should.equal(1)
+    res.claims.should.deepEqual([ guid ])
+  })
+
+  it('should refuse to remove a claim with non matching qualifiers', async () => {
+    const somePropertyId = await getSandboxPropertyId('string')
+    const value = randomString()
+    const { id, property } = await addClaim({
+      datatype: 'string',
+      value,
+      qualifiers: {
+        [somePropertyId]: randomString(),
+      },
+    })
+    await wbEdit.claim.remove({
+      id,
+      property,
+      value,
+      qualifiers: { [somePropertyId]: randomString() },
+      reconciliation: {
+        matchingQualifiers: [ somePropertyId ]
+      }
+    })
+    .then(shouldNotBeCalled)
+    .catch(err => {
+      err.message.should.equal('claim not found')
+    })
   })
 
   // The documentation explicitly specify that the claims should belong to the same entity
